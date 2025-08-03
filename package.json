@@ -2,7 +2,7 @@
   "name": "jshunter",
   "displayName": "JSHunter",
   "description": "JavaScript code analysis and security hunting extension",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.99.3"
   },
