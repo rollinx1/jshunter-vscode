@@ -1,4 +1,4 @@
-name: Build VSCode Extension
+name: Build & Package JSHunter Extension
 
 on:
   push:
@@ -19,13 +19,13 @@ jobs:
           node-version: '20'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Compile and lint
+        run: npm run package
 
       - name: Install VSCE
         run: npm install -g vsce
-
-      - name: Build extension
-        run: npm run build
 
       - name: Package extension (.vsix)
         run: vsce package
@@ -33,5 +33,5 @@ jobs:
       - name: Upload VSIX artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vscode-extension
+          name: jshunter-vsix
           path: '*.vsix'
