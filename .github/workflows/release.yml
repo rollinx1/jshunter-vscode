@@ -1,4 +1,4 @@
-name: Build & Package JSHunter Extension
+name: Build & Release JSHunter Extension
 
 on:
   push:
@@ -30,8 +30,12 @@ jobs:
       - name: Package extension (.vsix)
         run: vsce package
 
-      - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v4
+      - name: Create or update GitHub Release (latest)
+        uses: softprops/action-gh-release@v2
         with:
-          name: jshunter-vsix
-          path: '*.vsix'
+          tag_name: latest
+          name: "Latest Build"
+          files: "*.vsix"
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
