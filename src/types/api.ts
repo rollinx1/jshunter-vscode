@@ -42,7 +42,7 @@ export type JavascriptFile = {
     analysis_status: "processed" | "pending" | "failed" | "processing";
     type: "normal" | "inline" | "mobile" | "chunk";
     endpoint: string;
-    created: string;
+    created_at: string;
     last_modified: string;
 }
 
@@ -54,7 +54,7 @@ export type Endpoint = {
     hash: string;
     mobile_hash?: string; // Optional mobile version
     prettify_status: "processed" | "pending" | "failed" | "processing";
-    created: string;
+    created_at: string;
     last_modified: string;
     expand?: {
         js_files: JavascriptFile[] | null;
@@ -72,7 +72,7 @@ export interface Finding {
         js_file: JavascriptFile | null;
     }
     endpoint?: string;
-    created: string;
+    created_at: string;
 }
 
 export type FindingsByCategory = {

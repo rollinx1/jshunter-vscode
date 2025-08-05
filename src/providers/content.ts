@@ -156,7 +156,7 @@ export class ContentProvider implements vscode.TreeDataProvider<ContentTreeItem>
         if (endpointDomain === domain) {
             // Desktop version
             items.push(new ContentTreeItem(
-                `${getFullPath(selectedEndpoint.url)} (Desktop)`,
+                `${getFullPath(selectedEndpoint.url)}`,
                 vscode.TreeItemCollapsibleState.None,
                 'htmlFile',
                 selectedEndpoint,

@@ -32,7 +32,7 @@ export class ApiService {
     async loadEndpoints(): Promise<ApiResponse<Endpoint[]>> {
 
         let endpoints: Endpoint[] = [];
-        const endpoint = `${API_CONFIG.ENDPOINTS.ENDPOINTS}?expand=js_files`;
+        const endpoint = `${API_CONFIG.ENDPOINTS.ENDPOINTS}?expand=js_files&sort=url`;
         const result = await this.requestPagination<Endpoint>(endpoint)
         if (result.success && result.data) {
             endpoints = result.data;

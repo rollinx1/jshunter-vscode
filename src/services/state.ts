@@ -16,7 +16,16 @@ interface AppState {
     selectedFile: JavascriptFile | Endpoint | null;
     config: Config | null;
 }
-
+const initialState = {
+    endpoints: [],
+    selectedEndpoint: null,
+    findings: [],
+    sourcemaps: [],
+    sourceDir: null,
+    javascriptFiles: [],
+    selectedFile: null,
+    config: null
+};
 // 2. Create the Store class as a Singleton
 export class StateService {
     private static _instance: StateService;
@@ -31,24 +40,12 @@ export class StateService {
     private readonly _onSelectedEndpointChanged = new vscode.EventEmitter<Endpoint | null>();
     public readonly onSelectedEndpointChanged = this._onSelectedEndpointChanged.event;
 
-    private readonly _onFindingsChanged = new vscode.EventEmitter<Finding[]>();
-    public readonly onFindingsChanged = this._onFindingsChanged.event;
-
     private readonly _onSelectedFileChanged = new vscode.EventEmitter<Endpoint | JavascriptFile | null>();
     public readonly onSelectedFileChanged = this._onSelectedFileChanged.event;
 
     private constructor() {
         this.apiService = ApiService.getInstance();
-        this._state = {
-            endpoints: [],
-            selectedEndpoint: null,
-            findings: [],
-            sourcemaps: [],
-            sourceDir: null,
-            javascriptFiles: [],
-            selectedFile: null,
-            config: null
-        };
+        this._state = initialState
     }
 
 
@@ -94,6 +91,9 @@ export class StateService {
 
     // --- Setters to update state and notify listeners ---
     public setEndpoints(endpoints: Endpoint[]): void {
+        if (endpoints.length === 0) {
+            this.clearState()
+        }
         this._state.endpoints = endpoints;
         this._onEndpointsChanged.fire(this._state.endpoints);
     }
@@ -106,6 +106,9 @@ export class StateService {
             this.setFindings([]);
             this.setSourcemaps([]);
             this.setJavascriptFiles([]);
+            this._onEndpointsChanged.fire(this._state.endpoints);
+            this._onSelectedEndpointChanged.fire(this._state.selectedEndpoint)
+            this._onSelectedFileChanged.fire(this._state.selectedFile)
         }
 
         if (endpoint !== null) {
@@ -116,10 +119,10 @@ export class StateService {
                     this.setJavascriptFiles([...endpointJs, ...lazyLoadedJs.data])
                 } else {
                     this.setJavascriptFiles([...endpointJs]);
-
                 }
             }
-
+            const jsFiles = this.getJsFilesForSelectedEndpoint().sort((a, b) => a.url.localeCompare(b.url))
+            this.setJavascriptFiles(jsFiles)
             const findings = await this.apiService.loadFindings(this._state.javascriptFiles);
             if (findings.success && findings.data) {
                 this.setFindings(findings.data)
@@ -132,7 +135,6 @@ export class StateService {
 
     public setFindings(findings: Finding[]): void {
         this._state.findings = findings;
-        this._onFindingsChanged.fire(this._state.findings);
     }
 
     public setSourcemaps(sourcemaps: Sourcemap[]): void {
@@ -160,6 +162,9 @@ export class StateService {
             }
         }
         this._onSelectedFileChanged.fire(this._state.selectedFile)
+    }
+    private clearState() {
+        this._state = initialState;
     }
 
     public getSelectedEndpoint(): Endpoint | null {

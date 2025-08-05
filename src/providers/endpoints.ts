@@ -25,46 +25,114 @@ export class EndpointsProvider implements vscode.TreeDataProvider<EndpointTreeIt
     }
 
     getChildren(element?: EndpointTreeItem): Thenable<EndpointTreeItem[]> {
-        if (element) {
-            // This is a domain item, return its endpoints
-            if (element.type === 'domain' && element.endpoints) {
-                return Promise.resolve(
-                    element.endpoints.map(endpoint => new EndpointTreeItem(
-                        getEndpointDisplayName(endpoint.url),
-                        vscode.TreeItemCollapsibleState.None,
-                        'endpoint',
-                        endpoint
-                    ))
-                );
-            }
-            // Endpoints have no children
+        const endpoints = this.stateService.getState().endpoints;
+        if (!endpoints || endpoints.length === 0) {
             return Promise.resolve([]);
-        } else {
-            // This is the root, return domains
-            const endpoints = this.stateService.getState().endpoints;
-            if (!endpoints || endpoints.length === 0) {
-                return Promise.resolve([]);
-            }
-
+        }
+        if (!element) {
+            // Root: group by domain
             const endpointsByDomain = endpoints.reduce((acc, endpoint) => {
                 const domain = getDomainFromUrl(endpoint.url);
-                if (!acc[domain]) {
-                    acc[domain] = [];
-                }
+                if (!acc[domain]) acc[domain] = [];
                 acc[domain].push(endpoint);
                 return acc;
             }, {} as { [key: string]: Endpoint[] });
 
             return Promise.resolve(
-                Object.keys(endpointsByDomain).map(domain => new EndpointTreeItem(
-                    domain,
-                    vscode.TreeItemCollapsibleState.Collapsed,
-                    'domain',
-                    undefined,
-                    endpointsByDomain[domain] // Pass the endpoints for this domain
-                ))
+                Object.keys(endpointsByDomain).map(domain =>
+                    new EndpointTreeItem(
+                        domain,
+                        vscode.TreeItemCollapsibleState.Collapsed,
+                        'domain',
+                        undefined,
+                        undefined,
+                        endpointsByDomain[domain]
+                    )
+                )
             );
         }
+        if (element.type === 'domain' && element.domainEndpoints) {
+            // Group by URL under domain
+            const endpointsByUrl = element.domainEndpoints.reduce((acc, endpoint) => {
+                if (!acc[endpoint.url]) acc[endpoint.url] = [];
+                acc[endpoint.url].push(endpoint);
+                return acc;
+            }, {} as { [key: string]: Endpoint[] });
+
+            return Promise.resolve(
+                Object.keys(endpointsByUrl).map(url =>
+                    new EndpointTreeItem(
+                        getEndpointDisplayName(url),
+                        vscode.TreeItemCollapsibleState.Collapsed,
+                        'url',
+                        undefined,
+                        url,
+                        undefined, // <-- Fix: set domainEndpoints to undefined
+                        endpointsByUrl[url] // <-- Fix: set urlEndpoints here
+                    )
+                )
+            );
+        }
+
+        if (element.type === 'url' && element.urlEndpoints) {
+            // Show each occurrence (with timestamp) under URL
+            return Promise.resolve(
+                element.urlEndpoints.map(endpoint => {
+                    // Only show the timestamp as the label
+                    return new EndpointTreeItem(
+                        '',
+                        vscode.TreeItemCollapsibleState.None,
+                        'endpoint',
+                        endpoint,
+                        undefined,
+                        undefined,
+                        undefined
+                    );
+                })
+            );
+        }
+        return Promise.resolve([]);
+
+        // if (element) {
+        //     // This is a domain item, return its endpoints
+        //     if (element.type === 'domain' && element.endpoints) {
+        //         return Promise.resolve(
+        //             element.endpoints.map(endpoint => new EndpointTreeItem(
+        //                 getEndpointDisplayName(endpoint.url),
+        //                 vscode.TreeItemCollapsibleState.None,
+        //                 'endpoint',
+        //                 endpoint
+        //             ))
+        //         );
+        //     }
+        //     // Endpoints have no children
+        //     return Promise.resolve([]);
+        // } else {
+        //     // This is the root, return domains
+        //     const endpoints = this.stateService.getState().endpoints;
+        //     if (!endpoints || endpoints.length === 0) {
+        //         return Promise.resolve([]);
+        //     }
+
+        //     const endpointsByDomain = endpoints.reduce((acc, endpoint) => {
+        //         const domain = getDomainFromUrl(endpoint.url);
+        //         if (!acc[domain]) {
+        //             acc[domain] = [];
+        //         }
+        //         acc[domain].push(endpoint);
+        //         return acc;
+        //     }, {} as { [key: string]: Endpoint[] });
+
+        //     return Promise.resolve(
+        //         Object.keys(endpointsByDomain).map(domain => new EndpointTreeItem(
+        //             domain,
+        //             vscode.TreeItemCollapsibleState.Collapsed,
+        //             'domain',
+        //             undefined,
+        //             endpointsByDomain[domain] // Pass the endpoints for this domain
+        //         ))
+        //     );
+        // }
     }
 }
 
@@ -72,19 +140,25 @@ export class EndpointTreeItem extends vscode.TreeItem {
     constructor(
         public readonly label: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly type: 'domain' | 'endpoint',
+        public readonly type: 'domain' | 'url' | 'endpoint',
         public readonly endpoint?: Endpoint,
-        public readonly endpoints?: Endpoint[] // This property holds children for domain items
+        public readonly url?: string,
+        public readonly domainEndpoints?: Endpoint[],
+        public readonly urlEndpoints?: Endpoint[]
     ) {
         super(label, collapsibleState);
         this.contextValue = this.type;
-        if (this.type === 'endpoint') {
+        if (this.type === 'endpoint' && endpoint) {
             this.command = {
                 command: 'jshunter.setSelectedEndpoint',
                 title: 'Select Endpoint',
                 arguments: [this.endpoint]
             };
-            this.iconPath = new vscode.ThemeIcon('link');
+            this.iconPath = new vscode.ThemeIcon('arrow-small-right');
+            // Only show the timestamp as faded description
+            this.description = `Found at ${endpoint.created_at}`;
+        } else if (this.type === 'url') {
+            this.iconPath = new vscode.ThemeIcon('folder');
         } else {
             this.iconPath = new vscode.ThemeIcon('globe', new vscode.ThemeColor('charts.blue'));
         }

@@ -12,8 +12,11 @@ export function getFileNameFromUrl(rawUrl: string): string {
         const parsedURL = new URL(rawUrl);
 
         // Use path.basename to reliably get the last part of the path
-        const fileName = path.basename(parsedURL.pathname);
+        let fileName = path.basename(parsedURL.pathname);
 
+        if (fileName === "") {
+            fileName = "index.html"
+        }
         // Truncate if the filename is too long
         if (fileName.length > 100) {
             return fileName.substring(0, 100);
