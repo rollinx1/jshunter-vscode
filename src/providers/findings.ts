@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
-import { Finding, Endpoint } from '../types';
+import { Finding } from '../types';
 import { getFileNameFromUrl, getPath } from '../utils';
 import { StateService } from '../services';
 import path from 'path';
@@ -14,7 +14,7 @@ export class FindingsProvider implements vscode.TreeDataProvider<FindingTreeItem
     constructor(stateService: StateService, context: vscode.ExtensionContext) {
         this.stateService = stateService;
         this.context = context;
-        this.stateService.onSelectedEndpointChanged(() => this.refresh());
+        this.stateService.onFindingsChanged(() => this.refresh());
     }
     refresh(): void {
         this._onDidChangeTreeData.fire();
@@ -22,9 +22,7 @@ export class FindingsProvider implements vscode.TreeDataProvider<FindingTreeItem
 
     private getCategoryItems(): FindingTreeItem[] {
         const categories: FindingTreeItem[] = [];
-
-        // Detectar qué categorías están presentes basándose en los tipos de findings
-        const urlTypes = ['api-endpoint', 'full-url', 'path-only'];
+        const urlTypes = ['api-endpoint', 'url', 'path', 'file'];
         const gqlTypes = ['gql-query', 'gql-mutation', 'gql-subscription'];
         const domxssTypes = ['dom-eval', 'dom-write', 'dom-innerHTML', 'dom-postmessage', 'dom-domain'];
         const eventTypes = ['event-listener', 'event-onmessage', 'event-onhashchange', 'event-window-open', 'event-location'];
@@ -189,7 +187,7 @@ export class FindingsProvider implements vscode.TreeDataProvider<FindingTreeItem
 
         if (category) {
             const categoryTypeMap = {
-                'urls': ['api-endpoint', 'full-url', 'path-only'],
+                'urls': ['api-endpoint', 'url', 'path', 'file'],
                 'gql': ['gql-query', 'gql-mutation', 'gql-subscription'],
                 'domxss': ['dom-eval', 'dom-write', 'dom-innerHTML', 'dom-postmessage', 'dom-domain'],
                 'events': ['event-listener', 'event-onmessage', 'event-onhashchange', 'event-window-open', 'event-location'],

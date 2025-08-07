@@ -198,7 +198,7 @@ export class ContentProvider implements vscode.TreeDataProvider<ContentTreeItem>
                 if (jsDomain === domain) {
                     if (jsFile.type === "chunk") {
                         items.push(new ContentTreeItem(
-                            `${getFullPath(jsFile.url)} (chunk)`,
+                            getFullPath(jsFile.url),
                             vscode.TreeItemCollapsibleState.None,
                             'jsChunk',
                             selectedEndpoint,
@@ -249,23 +249,30 @@ export class ContentTreeItem extends vscode.TreeItem {
         this.tooltip = this.getTooltip();
         this.contextValue = type;
 
-        // Configurar iconos
-        if (type === 'htmlFile') {
-            // Usar icono nativo de VSCode para archivos HTML
-            this.resourceUri = vscode.Uri.parse(`file:///dummy.html`);
-        } else if (type === 'jsFile') {
-            // Usar icono nativo de VSCode para archivos JS (yellow)
-            this.resourceUri = vscode.Uri.parse(`file:///dummy.js`);
-        } else if (type === 'jsChunk') {
-            // Usar icono de test para chunks (orange)
-            this.resourceUri = vscode.Uri.parse(`file:///dummy.test.js`);
-        } else if (type === 'domain') {
-            // Usar icono de globo para dominios
-            this.iconPath = new vscode.ThemeIcon('globe', new vscode.ThemeColor('charts.orange'));
-        } else if (type === 'message') {
-            this.iconPath = new vscode.ThemeIcon('info');
-        } else if (type === 'error') {
-            this.iconPath = new vscode.ThemeIcon('error');
+        switch (type) {
+            case 'htmlFile': {
+                this.resourceUri = vscode.Uri.parse(`file:///dummy.html`);
+                break;
+            }
+            case 'jsFile': {
+                this.resourceUri = vscode.Uri.parse(`file:///dummy.js`);
+                break;
+            }
+            case 'jsChunk': {
+                this.resourceUri = vscode.Uri.parse(`file:///dummy.test.js`);
+                break;
+            }
+            case 'domain': {
+                this.iconPath = new vscode.ThemeIcon('globe', new vscode.ThemeColor('charts.orange'));
+                break;
+            }
+            case 'message': {
+                this.iconPath = new vscode.ThemeIcon('info');
+                break;
+            } case 'error': {
+                this.iconPath = new vscode.ThemeIcon('error');
+                break;
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-import { HealthCheckResult, ApiResponse, Config, Endpoint, PBResponse, JavascriptFile, Finding, Sourcemap } from '../types';
+import { ApiResponse, Config, Endpoint, PBResponse, JavascriptFile, Finding, Sourcemap } from '../types';
 
 const API_CONFIG = {
     BASE_URL: 'http://localhost:20450',

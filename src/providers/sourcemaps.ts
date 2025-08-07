@@ -13,7 +13,7 @@ export class SourcemapsProvider implements vscode.TreeDataProvider<SourcemapTree
 
     constructor(stateService: StateService) {
         this.stateService = stateService;
-        this.stateService.onSelectedFileChanged(() => this.refresh());
+        this.stateService.onSourcesChanged(() => this.refresh());
     }
     refresh(): void {
         this._onDidChangeTreeData.fire();

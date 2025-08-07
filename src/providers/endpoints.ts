@@ -27,7 +27,13 @@ export class EndpointsProvider implements vscode.TreeDataProvider<EndpointTreeIt
     getChildren(element?: EndpointTreeItem): Thenable<EndpointTreeItem[]> {
         const endpoints = this.stateService.getState().endpoints;
         if (!endpoints || endpoints.length === 0) {
-            return Promise.resolve([]);
+            return Promise.resolve([
+                new EndpointTreeItem(
+                    'No endpoints Found',
+                    vscode.TreeItemCollapsibleState.None,
+                    'message'
+                )
+            ]);
         }
         if (!element) {
             // Root: group by domain
@@ -92,47 +98,6 @@ export class EndpointsProvider implements vscode.TreeDataProvider<EndpointTreeIt
             );
         }
         return Promise.resolve([]);
-
-        // if (element) {
-        //     // This is a domain item, return its endpoints
-        //     if (element.type === 'domain' && element.endpoints) {
-        //         return Promise.resolve(
-        //             element.endpoints.map(endpoint => new EndpointTreeItem(
-        //                 getEndpointDisplayName(endpoint.url),
-        //                 vscode.TreeItemCollapsibleState.None,
-        //                 'endpoint',
-        //                 endpoint
-        //             ))
-        //         );
-        //     }
-        //     // Endpoints have no children
-        //     return Promise.resolve([]);
-        // } else {
-        //     // This is the root, return domains
-        //     const endpoints = this.stateService.getState().endpoints;
-        //     if (!endpoints || endpoints.length === 0) {
-        //         return Promise.resolve([]);
-        //     }
-
-        //     const endpointsByDomain = endpoints.reduce((acc, endpoint) => {
-        //         const domain = getDomainFromUrl(endpoint.url);
-        //         if (!acc[domain]) {
-        //             acc[domain] = [];
-        //         }
-        //         acc[domain].push(endpoint);
-        //         return acc;
-        //     }, {} as { [key: string]: Endpoint[] });
-
-        //     return Promise.resolve(
-        //         Object.keys(endpointsByDomain).map(domain => new EndpointTreeItem(
-        //             domain,
-        //             vscode.TreeItemCollapsibleState.Collapsed,
-        //             'domain',
-        //             undefined,
-        //             endpointsByDomain[domain] // Pass the endpoints for this domain
-        //         ))
-        //     );
-        // }
     }
 }
 
@@ -140,7 +105,7 @@ export class EndpointTreeItem extends vscode.TreeItem {
     constructor(
         public readonly label: string,
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly type: 'domain' | 'url' | 'endpoint',
+        public readonly type: 'message' | 'domain' | 'url' | 'endpoint',
         public readonly endpoint?: Endpoint,
         public readonly url?: string,
         public readonly domainEndpoints?: Endpoint[],
@@ -148,22 +113,36 @@ export class EndpointTreeItem extends vscode.TreeItem {
     ) {
         super(label, collapsibleState);
         this.contextValue = this.type;
-        if (this.type === 'endpoint' && endpoint) {
-            this.command = {
-                command: 'jshunter.setSelectedEndpoint',
-                title: 'Select Endpoint',
-                arguments: [this.endpoint]
-            };
-            this.iconPath = new vscode.ThemeIcon('arrow-small-right');
-            // Only show the timestamp as faded description
-            this.description = `Found at ${endpoint.created_at}`;
-        } else if (this.type === 'url') {
-            this.iconPath = new vscode.ThemeIcon('folder');
-        } else {
-            this.iconPath = new vscode.ThemeIcon('globe', new vscode.ThemeColor('charts.blue'));
+        switch (this.type) {
+            case 'domain': {
+                this.iconPath = new vscode.ThemeIcon('globe', new vscode.ThemeColor('charts.blue'));
+                break;
+            }
+            case 'endpoint': {
+                if (endpoint) {
+                    this.command = {
+                        command: 'jshunter.setSelectedEndpoint',
+                        title: 'Select Endpoint',
+                        arguments: [this.endpoint]
+                    };
+                    this.iconPath = new vscode.ThemeIcon('arrow-small-right');
+                    // Only show the timestamp as faded description
+                    this.description = `Found at ${endpoint.created_at}`;
+                }
+                break;
+            }
+            case 'url': {
+                this.iconPath = new vscode.ThemeIcon('folder');
+                break;
+            }
+            case 'message': {
+                this.iconPath = new vscode.ThemeIcon('info');
+                break;
+            }
         }
     }
 }
+
 
 export class EndpointsCommands {
     private endpointsProvider?: EndpointsProvider;

@@ -40,12 +40,15 @@ export class StateService {
     private readonly _onSelectedEndpointChanged = new vscode.EventEmitter<Endpoint | null>();
     public readonly onSelectedEndpointChanged = this._onSelectedEndpointChanged.event;
 
-    private readonly _onSelectedFileChanged = new vscode.EventEmitter<Endpoint | JavascriptFile | null>();
-    public readonly onSelectedFileChanged = this._onSelectedFileChanged.event;
+    private readonly _onSourcesChanged = new vscode.EventEmitter<Sourcemap[]>();
+    public readonly onSourcesChanged = this._onSourcesChanged.event;
+
+    private readonly _onFindinsChanged = new vscode.EventEmitter<Finding[]>();
+    public readonly onFindingsChanged = this._onFindinsChanged.event;
 
     private constructor() {
         this.apiService = ApiService.getInstance();
-        this._state = initialState
+        this._state = initialState;
     }
 
 
@@ -78,11 +81,22 @@ export class StateService {
         this.checkInterval = setInterval(async () => {
             const endpointsCall = await this.apiService.loadEndpoints();
             if (endpointsCall.success && endpointsCall.data) {
+                if (endpointsCall.data.length === 0) {
+                    this.clearState();
+                }
                 this.setEndpoints(endpointsCall.data);
+            } else {
+                this.clearState();
             }
         }, 30000);
     }
 
+    public clearState() {
+        this.setSelectedEndpoint(null);
+        this.setSelectedFile(null);
+        this.setFindings([])
+        this.setSourcemaps([]);
+    }
 
     // --- Getters for current state ---
     public getState(): AppState {
@@ -91,9 +105,6 @@ export class StateService {
 
     // --- Setters to update state and notify listeners ---
     public setEndpoints(endpoints: Endpoint[]): void {
-        if (endpoints.length === 0) {
-            this.clearState()
-        }
         this._state.endpoints = endpoints;
         this._onEndpointsChanged.fire(this._state.endpoints);
     }
@@ -106,9 +117,6 @@ export class StateService {
             this.setFindings([]);
             this.setSourcemaps([]);
             this.setJavascriptFiles([]);
-            this._onEndpointsChanged.fire(this._state.endpoints);
-            this._onSelectedEndpointChanged.fire(this._state.selectedEndpoint)
-            this._onSelectedFileChanged.fire(this._state.selectedFile)
         }
 
         if (endpoint !== null) {
@@ -135,10 +143,12 @@ export class StateService {
 
     public setFindings(findings: Finding[]): void {
         this._state.findings = findings;
+        this._onFindinsChanged.fire(this._state.findings)
     }
 
     public setSourcemaps(sourcemaps: Sourcemap[]): void {
         this._state.sourcemaps = sourcemaps;
+        this._onSourcesChanged.fire(this._state.sourcemaps)
     }
 
     public setSourceDir(dir: string | null): void {
@@ -161,10 +171,6 @@ export class StateService {
                 };
             }
         }
-        this._onSelectedFileChanged.fire(this._state.selectedFile)
-    }
-    private clearState() {
-        this._state = initialState;
     }
 
     public getSelectedEndpoint(): Endpoint | null {
